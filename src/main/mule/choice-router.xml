@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:salesforce="http://www.mulesoft.org/schema/mule/salesforce" xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core"
+	xmlns:http="http://www.mulesoft.org/schema/mule/http"
+	xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd
+http://www.mulesoft.org/schema/mule/salesforce http://www.mulesoft.org/schema/mule/salesforce/current/mule-salesforce.xsd">
+	<http:listener-config name="HTTP_Listener_config" doc:name="HTTP Listener config" doc:id="0e70bd0b-e19a-40db-91da-ec80315c78c7" >
+		<http:listener-connection host="0.0.0.0" port="8081" />
+	</http:listener-config>
+	<configuration-properties doc:name="Configuration properties" doc:id="a201218b-f1fe-44a6-8640-c993104d7e30" file="dev.yaml" />
+	<flow name="choice-routerFlow" doc:id="76895c80-9853-44cb-b7e7-46f698cbdc2b" >
+		<http:listener doc:name="Listener" doc:id="ad7424c7-51cb-4261-9b9d-9c3ff9d2f3b8" config-ref="HTTP_Listener_config" path="/choice"/>
+		<ee:transform doc:name="Transform Message" doc:id="dcbc5b59-89a3-4c0e-9a18-21fb5fb3f36e" >
+			<ee:message >
+			</ee:message>
+			<ee:variables >
+				<ee:set-variable variableName="colour" ><![CDATA[%dw 2.0
+output application/json
+---
+{
+	"colour": p('colour.colour')
+}]]></ee:set-variable>
+			</ee:variables>
+		</ee:transform>
+		<choice doc:name="Choice" doc:id="f7d8c150-aad4-4f45-8f72-8b52b657ee59" >
+			<when expression='#[vars."colour" =="red"]'>
+				<logger level="INFO" doc:name="Logger" doc:id="8ebc4460-140b-4379-a58d-b097fc93c71e" message="#['colour is red']"/>
+			</when>
+			<otherwise >
+				<ee:transform doc:name="Transform Message" doc:id="702b2c39-ffc9-432b-90ae-d7fd19ff0f02" >
+					<ee:message >
+						<ee:set-payload ><![CDATA[%dw 2.0
+output application/java
+---
+{
+	"error": "coloyrexception",
+	"errorType": error.errorType,
+	"errormessage": error.description,
+	"originpayload": payload
+	}]]></ee:set-payload>
+					</ee:message>
+				</ee:transform>
+				<logger level="INFO" doc:name="Logger" doc:id="d2c66b3b-03de-41d6-af63-162d90232df2" message="#[payload]"/>
+			</otherwise>
+		</choice>
+	</flow>
+	<!-- <flow name="choice-routerFlow1" doc:id="dfc0e4f3-f677-4fee-8c4c-187f6f625400" >
+		<salesforce:unauthorize doc:name="Unauthorize" doc:id="d26fab70-ba36-4265-a504-6ede4fec0270" />
+	</flow> -->
+</mule>
